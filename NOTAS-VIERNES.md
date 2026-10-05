@@ -19,7 +19,8 @@ el **viernes**, cuando se recuperen los créditos.
 
 ## 🔍 Revisiones pendientes
 
-- [ ] 🔴 **Drop 289 (grupo Gatitos, 5/10/2026): salió mal y el bot lo dio por bueno.**
+- [ ] 🔴 **[Theobot] Drop 289 (grupo Gatitos, 5/10/2026): salió mal y el bot lo dio por bueno.**
+  Enviado a la sesión "Theobot v6.1 escaneo de chats" el 5/10.
   Lo terminé a mano. Hay que averiguar qué causó la falla.
   Detalle en [Incidente: Drop 289](#incidente-drop-289).
 
@@ -67,7 +68,7 @@ el **viernes**, cuando se recuperen los créditos.
 
 **Qué necesito el viernes para revisarlo:**
 
-- [ ] Acceso al código del bot. **No está en este repo**, que solo tiene la página web.
+- [ ] Retomar en la sesión "Theobot v6.1 escaneo de chats" (el código de Theobot no está en este repo).
 - [ ] Logs del bot del 5/10, entre 13:45 y 14:25.
 - [ ] El mensaje original con la lista del drop 289 (host + modelos).
 - [ ] Las capturas, que las tengo en el teléfono.
