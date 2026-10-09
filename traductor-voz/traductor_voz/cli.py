@@ -1,6 +1,7 @@
 """Línea de comandos.
 
     traductor-voz app                                   # abre la app web
+    traductor-voz bot --token XXX --usuarios 123        # bot de Telegram
     traductor-voz traducir nota.ogg -i fr de en         # traduce un audio
     traductor-voz perfil crear yo lectura.wav           # guarda tu perfil de voz
     traductor-voz perfil listar
@@ -9,6 +10,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 from pathlib import Path
 
@@ -87,6 +89,29 @@ def cmd_app(args) -> int:
     return 0
 
 
+def _parse_users(value: str) -> set[int]:
+    try:
+        return {int(u) for u in value.replace(";", ",").split(",") if u.strip()}
+    except ValueError:
+        raise ValueError(f"--usuarios debe ser una lista de números separados por comas, no {value!r}") from None
+
+
+def cmd_bot(args) -> int:
+    from .bot import run_bot
+
+    if not args.token:
+        raise ValueError("Falta el token del bot: usa --token o la variable TELEGRAM_TOKEN (te lo da @BotFather).")
+    run_bot(
+        token=args.token,
+        allowed_users=_parse_users(args.usuarios),
+        tts=args.motor,
+        whisper_model=args.whisper,
+        translation_engine=args.traduccion,
+        default_targets=args.idiomas,
+    )
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="traductor-voz", description="Traduce tus audios con tu propia voz.")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -97,6 +122,17 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--puerto", type=int, default=7860)
     p.add_argument("--compartir", action="store_true", help="crea un enlace público temporal de Gradio")
     p.set_defaults(func=cmd_app)
+
+    p = sub.add_parser("bot", help="bot de Telegram")
+    p.add_argument("--token", default=os.environ.get("TELEGRAM_TOKEN"), help="token de @BotFather (o TELEGRAM_TOKEN)")
+    p.add_argument(
+        "--usuarios",
+        default=os.environ.get("TELEGRAM_USUARIOS", ""),
+        help="números de usuario autorizados, separados por comas (o TELEGRAM_USUARIOS)",
+    )
+    p.add_argument("-i", "--idiomas", nargs="+", default=["fr", "de", "en"], choices=list(languages.TARGETS))
+    _add_engine_args(p)
+    p.set_defaults(func=cmd_bot)
 
     p = sub.add_parser("traducir", help="traduce un archivo de audio")
     p.add_argument("audio", help="archivo de audio (wav, mp3, ogg, m4a...)")

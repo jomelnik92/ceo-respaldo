@@ -24,7 +24,8 @@ dependencies = [
 # resemble-perth (marca de agua de Chatterbox) usa pkg_resources, que setuptools>=81 ya no trae.
 chatterbox = ["chatterbox-tts>=0.1.7", "setuptools<81"]
 qwen = ["qwen-tts>=0.1.1"]
-dev = ["pytest"]
+bot = ["python-telegram-bot>=22,<23"]
+dev = ["pytest", "python-telegram-bot>=22,<23"]
 
 [project.scripts]
 traductor-voz = "traductor_voz.cli:main"

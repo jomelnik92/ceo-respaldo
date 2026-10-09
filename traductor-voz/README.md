@@ -3,6 +3,9 @@
 Mandas un audio (una nota de voz, una grabación) y te lo devuelve **dicho por ti en francés,
 alemán o inglés**: con tu voz, tu tono, tu ritmo y la emoción de cada frase.
 
+Se usa de tres formas: como **bot de Telegram** (le mandas una nota de voz desde el celular y
+te contesta con tus notas de voz traducidas), como **app web** o desde la **línea de comandos**.
+
 Todo corre en tu propia computadora con modelos abiertos. Después de la primera descarga de los
 modelos no necesita internet ni manda tu voz a ningún servicio.
 
@@ -46,6 +49,8 @@ tu audio ──► Whisper ──► frases con tiempos ──► traducción �
 
 Necesitas **Python 3.11**, **ffmpeg** y, para que vaya rápido, una **GPU NVIDIA con 8 GB de
 VRAM o más**. Sin GPU funciona igual, pero tarda varias veces la duración del audio por idioma.
+Con una RTX 3090 (24 GB) entran todos los modelos a la vez en la GPU, y hasta puedes usar
+`--whisper large-v3` para la máxima precisión al transcribir.
 
 ### Windows
 
@@ -60,7 +65,7 @@ py -3.11 -m venv .venv
 # PyTorch con soporte de GPU NVIDIA (Chatterbox necesita la versión 2.6.0)
 pip install torch==2.6.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cu124
 
-pip install -e ".[chatterbox]"
+pip install -e ".[chatterbox,bot]"
 traductor-voz app
 ```
 
@@ -73,13 +78,57 @@ Se abre en <http://127.0.0.1:7860>. La primera vez descarga los modelos (varios 
 
 ```bash
 python3.11 -m venv .venv && source .venv/bin/activate
-pip install -e ".[chatterbox]"
+pip install -e ".[chatterbox,bot]"
 traductor-voz app
 ```
 
 En Mac con Apple Silicon usa la GPU (MPS) automáticamente.
 
 ## Uso
+
+### Bot de Telegram
+
+**Crear el bot (una sola vez):**
+
+1. En Telegram busca **@BotFather**, mándale `/newbot` y elige un nombre y un usuario para tu bot
+   (por ejemplo `mi_traductor_bot`). Te da un **token**: es la llave del bot, no lo compartas.
+2. En tu PC arranca el bot sin usuarios autorizados:
+   ```powershell
+   traductor-voz bot --token "EL-TOKEN"
+   ```
+3. Escríbele cualquier cosa a tu bot en Telegram. Te contesta con tu **número de usuario**.
+4. Cierra el bot (Ctrl+C) y guarda el token y tu número para no escribirlos cada vez
+   (abre una terminal nueva después):
+   ```powershell
+   setx TELEGRAM_TOKEN "EL-TOKEN"
+   setx TELEGRAM_USUARIOS "TU-NUMERO"
+   ```
+5. Desde ahora lo arrancas con doble clic en **`iniciar-bot.bat`**. Para que arranque solo al
+   prender la PC: Win+R → `shell:startup` → pega ahí un acceso directo a `iniciar-bot.bat`.
+
+**Usarlo:** mándale una nota de voz (o un audio, o un video). Te contesta con lo que entendió y
+después con una nota de voz tuya por cada idioma, con el texto traducido debajo.
+
+| Comando | Qué hace |
+|---|---|
+| `/idiomas fr de en` | Elige a qué idiomas traducir (fr, de, en, es). |
+| `/grabarperfil yo` | La próxima nota de voz que mandes (10-20 s, sin ruido) se guarda como tu perfil de voz. |
+| `/usarperfil yo` · `/sinperfil` | Usa un perfil guardado (también los de la app web) o deja de usarlo. |
+| `/intensidad 0.7` | Intensidad emocional, de 0.25 a 1. |
+| `/acento 0.2` | 0 = acento nativo, 0.6 = el tuyo. |
+| `/texto` | Muestra u oculta el texto traducido. |
+| `/ayuda` | Ajustes actuales y comandos. |
+
+Notas:
+
+- El bot sólo atiende a los números de usuario autorizados (puedes poner varios separados por
+  comas). A cualquier otra persona le contesta que es privado.
+- Tu PC tiene que estar prendida con el bot corriendo. Si mandas audios con el bot apagado,
+  Telegram los guarda hasta 24 h y el bot los procesa al arrancar.
+- El procesamiento es local, pero los audios viajan por los servidores de Telegram (los chats
+  con bots no tienen cifrado de punta a punta).
+- Límites: audios de hasta 5 minutos (y 20 MB, límite de Telegram para bots).
+- Los ajustes de cada chat se guardan en `~/.traductor-voz/bot.json`.
 
 ### App web
 
@@ -114,6 +163,9 @@ traductor-voz traducir nota.ogg
 # Sólo inglés, en mp3, con tu perfil y más emoción
 traductor-voz traducir nota.ogg -i en -f mp3 --perfil yo --intensidad 0.7
 
+# Bot de Telegram (token y usuarios también por TELEGRAM_TOKEN / TELEGRAM_USUARIOS)
+traductor-voz bot --token "EL-TOKEN" --usuarios 123456789
+
 # Perfiles
 traductor-voz perfil crear yo lectura.wav
 traductor-voz perfil listar
@@ -133,8 +185,8 @@ Cada motor fija versiones distintas de `transformers`, así que van en entornos 
 
 ```bash
 python3.11 -m venv .venv-qwen && source .venv-qwen/bin/activate
-pip install -e ".[qwen]"
-traductor-voz app --motor qwen3
+pip install -e ".[qwen,bot]"
+traductor-voz app --motor qwen3     # o: traductor-voz bot --motor qwen3
 ```
 
 Vale la pena probar los dos con tu voz y quedarte con el que suene más a ti en cada idioma.
@@ -146,7 +198,8 @@ pip install -e ".[dev]"
 pytest
 ```
 
-Las pruebas usan motores simulados y voces sintéticas: no descargan modelos.
+Las pruebas usan motores simulados y voces sintéticas: no descargan modelos. El bot se prueba
+con la librería real de Telegram contra un servidor de Telegram falso que corre en la misma PC.
 
 ## Correr en la nube (Claude Code)
 
@@ -157,7 +210,8 @@ así que sirve para audios cortos de prueba, no para el uso diario.
 
 ## Próximos pasos posibles
 
-- Bot de Telegram o WhatsApp: le mandas la nota de voz y te responde con las traducciones.
+- Bot de WhatsApp (la API oficial pide una cuenta de empresa de Meta y un servidor público con
+  https; por eso empezamos con Telegram).
 - Traducción con un modelo de lenguaje local (más natural con modismos y frases coloquiales).
 - Ajuste fino (*fine-tuning*) del modelo de voz con 30-60 min de tu voz para un clon todavía
   más fiel.
