@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "traductor-voz"
+version = "0.1.0"
+description = "Traduce tus audios a otro idioma con tu propia voz, tu tono y tus emociones."
+readme = "README.md"
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "numpy",
+    "soundfile",
+    "librosa>=0.10",
+    "faster-whisper>=1.1",
+    "transformers>=4.57",
+    "sentencepiece",
+    "sacremoses",
+    "gradio>=5",
+]
+
+[project.optional-dependencies]
+# Cada motor de voz fija versiones distintas de transformers: instala UNO por entorno.
+# resemble-perth (marca de agua de Chatterbox) usa pkg_resources, que setuptools>=81 ya no trae.
+chatterbox = ["chatterbox-tts>=0.1.7", "setuptools<81"]
+qwen = ["qwen-tts>=0.1.1"]
+dev = ["pytest"]
+
+[project.scripts]
+traductor-voz = "traductor_voz.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["traductor_voz*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
